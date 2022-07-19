@@ -1,0 +1,81 @@
+version: '3.5'
+
+# create a volume de chua du lieu database
+volumes:
+  volume_sql:
+    # external: true
+
+    # create a network de cac service dung chung
+networks:
+  bridgelap19:
+    driver: bridge
+    # external: true
+
+    #tao cac service
+services:
+  service_api:
+    # moi lan chay thi build moi image cua service nay.
+    # build image tu script
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    working_dir: /app
+    # dat ten cho container la service_api
+    container_name: service_api
+    # qua trinh chay. neu container bi dung thi khoi dong lai
+    restart: always
+    #khi container chay expose ra voi port 3000
+    ports:
+      - 3000:3000
+    # service nay run sau service sql
+    depends_on:
+      - service_sql
+    # khai bao bien moi truong de chay sql
+    environment:
+      - DB_HOST=service_sql
+      - USER=root
+      - PASS=123qwe
+
+    # chay voi command
+    # command: >
+    #   bash -c "
+    #           while true;
+    #           do
+    #             echo 'hello world'
+    #             sleep 10
+    #           done"
+    command: >
+      bash -c "node server.js"
+
+    # su dung network lap19
+    networks:
+      - bridgelap19
+
+  # service thu 2. service sql
+  service_sql:
+    # build service tu image sql
+    image: mysql
+    # dat ten cho container
+    container_name: service_sql
+    # tu khoi dong neu chet
+    restart: always
+    # chay voi port?
+    ports:
+      - 3306:3306
+    # volume chay
+    volumes:
+      - volume_sql:/var/lib/mysql
+    # khi bao cac bien moi truong
+    environment:
+      - MYSQL_ROOT_PASSWORD=123qwe
+      - MYSQL_DATABASE=UsersDB
+    # su dung network nao?
+    networks:
+      - bridgelap19
+    command: --default-authentication-plugin=mysql_native_password
+    # healthcheck:
+    #   test: ["/etc/init.d/mysql", "status"]
+    #   interval: 1m30s
+    #   timeout: 30s
+    #   retries: 5
+    #   start_period: 30s
